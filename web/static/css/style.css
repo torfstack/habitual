@@ -1,0 +1,185 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --border: #2a2d3a;
+  --text: #e2e4ef;
+  --muted: #7a7d92;
+  --accent: #7c6af7;
+  --accent-hover: #9585ff;
+  --success: #3ecf8e;
+  --danger: #f87171;
+  --radius: 10px;
+  --gap: 1rem;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+header {
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+header h1 a {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+main {
+  max-width: 640px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Header row */
+.habits-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.habits-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.points-badge {
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+}
+
+/* Habit rows */
+#habits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.habit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  transition: border-color 0.15s;
+}
+
+.habit-row.completed {
+  border-color: var(--success);
+  opacity: 0.75;
+}
+
+.toggle-btn {
+  background: none;
+  border: 2px solid var(--muted);
+  color: var(--muted);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1rem;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.habit-row.completed .toggle-btn {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.habit-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.habit-name { font-weight: 600; }
+.habit-desc { font-size: 0.8rem; color: var(--muted); }
+
+.habit-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  font-size: 0.8rem;
+}
+
+.habit-points { color: var(--accent); font-weight: 600; }
+.habit-streak { font-size: 0.75rem; }
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+.delete-btn:hover { color: var(--danger); }
+
+.empty { color: var(--muted); font-size: 0.9rem; text-align: center; padding: 2rem 0; }
+
+/* Add habit form */
+.add-habit {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+
+.add-habit h3 { margin-bottom: 0.75rem; font-size: 1rem; font-weight: 600; }
+
+.add-habit form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.add-habit input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  outline: none;
+}
+.add-habit input:focus { border-color: var(--accent); }
+
+.add-habit button[type="submit"] {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background 0.15s;
+}
+.add-habit button[type="submit"]:hover { background: var(--accent-hover); }

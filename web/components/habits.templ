@@ -1,0 +1,81 @@
+package components
+
+import (
+	"fmt"
+	"habitual/internal/model"
+)
+
+templ HabitsPage(habits []model.Habit, todayPoints int) {
+	@Layout("Today") {
+		<div class="habits-header">
+			<h2>Today</h2>
+			<span class="points-badge">{ fmt.Sprintf("%d pts", todayPoints) }</span>
+		</div>
+
+		<div id="habits-list">
+			@HabitList(habits)
+		</div>
+
+		<section class="add-habit">
+			<h3>Add habit</h3>
+			<form
+				hx-post="/habits"
+				hx-target="#habits-list"
+				hx-swap="outerHTML"
+				hx-on::after-request="this.reset()"
+			>
+				<input type="text" name="name" placeholder="Habit name" required/>
+				<input type="text" name="description" placeholder="Description (optional)"/>
+				<input type="number" name="points" placeholder="Points" value="1" min="1" required/>
+				<button type="submit">Add</button>
+			</form>
+		</section>
+	}
+}
+
+templ HabitList(habits []model.Habit) {
+	<div id="habits-list">
+		for _, h := range habits {
+			@HabitRow(h)
+		}
+		if len(habits) == 0 {
+			<p class="empty">No habits yet. Add one below!</p>
+		}
+	</div>
+}
+
+templ HabitRow(h model.Habit) {
+	<div class={ "habit-row", templ.KV("completed", h.CompletedToday) } id={ fmt.Sprintf("habit-%d", h.ID) }>
+		<button
+			class="toggle-btn"
+			hx-post={ fmt.Sprintf("/habits/%d/toggle", h.ID) }
+			hx-target={ fmt.Sprintf("#habit-%d", h.ID) }
+			hx-swap="outerHTML"
+		>
+			if h.CompletedToday {
+				✓
+			} else {
+				○
+			}
+		</button>
+		<div class="habit-info">
+			<span class="habit-name">{ h.Name }</span>
+			if h.Description != "" {
+				<span class="habit-desc">{ h.Description }</span>
+			}
+		</div>
+		<div class="habit-meta">
+			<span class="habit-points">{ fmt.Sprintf("+%d", h.Points) }</span>
+			if h.Streak > 1 {
+				<span class="habit-streak">{ fmt.Sprintf("🔥 %d", h.Streak) }</span>
+			}
+		</div>
+		<button
+			class="delete-btn"
+			hx-delete={ fmt.Sprintf("/habits/%d", h.ID) }
+			hx-target="#habits-list"
+			hx-swap="outerHTML"
+			hx-confirm="Delete this habit?"
+		>✕</button>
+	</div>
+}
