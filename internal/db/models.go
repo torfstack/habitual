@@ -19,7 +19,6 @@ type Habit struct {
 	ID          int32
 	Name        string
 	Description *string
-	Points      int32
 	Target      int32
 	Period      string
 	DeletedAt   pgtype.Timestamptz

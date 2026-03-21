@@ -42,7 +42,7 @@ func Layout(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " — Habitual</title><link rel=\"stylesheet\" href=\"/static/css/style.css\"><script src=\"https://unpkg.com/htmx.org@2.0.4\" integrity=\"sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+\" crossorigin=\"anonymous\"></script><script>\n\t\t\t\t(function() {\n\t\t\t\t\tvar saved = localStorage.getItem('theme');\n\t\t\t\t\tvar preferred = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');\n\t\t\t\t\tdocument.documentElement.setAttribute('data-theme', preferred);\n\t\t\t\t})();\n\t\t\t</script></head><body><header><h1><a href=\"/\">Habitual</a></h1><button class=\"theme-toggle\" onclick=\"toggleTheme()\" aria-label=\"Toggle theme\"><span class=\"icon-sun\">☀️</span> <span class=\"icon-moon\">🌙</span></button></header><main>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " — Habitual</title><link rel=\"stylesheet\" href=\"/static/css/style.css\"><script src=\"https://unpkg.com/htmx.org@2.0.4\" integrity=\"sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+\" crossorigin=\"anonymous\"></script><script src=\"https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js\"></script><script>\n\t\t\t\t(function() {\n\t\t\t\t\tvar saved = localStorage.getItem('theme');\n\t\t\t\t\tvar preferred = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');\n\t\t\t\t\tdocument.documentElement.setAttribute('data-theme', preferred);\n\t\t\t\t})();\n\t\t\t</script></head><body><header><h1><a href=\"/\">Habitual</a></h1><button class=\"theme-toggle\" onclick=\"toggleTheme()\" aria-label=\"Toggle theme\"><span class=\"icon-sun\">☀️</span> <span class=\"icon-moon\">🌙</span></button></header><main>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -50,7 +50,7 @@ func Layout(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</main><script>\n\t\t\t\tfunction toggleTheme() {\n\t\t\t\t\tvar html = document.documentElement;\n\t\t\t\t\tvar next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';\n\t\t\t\t\thtml.setAttribute('data-theme', next);\n\t\t\t\t\tlocalStorage.setItem('theme', next);\n\t\t\t\t}\n\t\t\t</script></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</main><script>\n\t\t\t\tfunction toggleTheme() {\n\t\t\t\t\tvar html = document.documentElement;\n\t\t\t\t\tvar next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';\n\t\t\t\t\thtml.setAttribute('data-theme', next);\n\t\t\t\t\tlocalStorage.setItem('theme', next);\n\t\t\t\t}\n\n\t\t\t\tvar wasAllDone = false;\n\t\t\t\tdocument.addEventListener('htmx:afterSwap', function() {\n\t\t\t\t\tvar allDone = !!document.querySelector('.all-done');\n\t\t\t\t\tif (allDone && !wasAllDone) {\n\t\t\t\t\t\tconfetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });\n\t\t\t\t\t}\n\t\t\t\t\twasAllDone = allDone;\n\t\t\t\t});\n\t\t\t</script></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -9,6 +9,7 @@ templ Layout(title string) {
 			<title>{ title } — Habitual</title>
 			<link rel="stylesheet" href="/static/css/style.css"/>
 			<script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
+			<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 			<script>
 				(function() {
 					var saved = localStorage.getItem('theme');
@@ -35,6 +36,15 @@ templ Layout(title string) {
 					html.setAttribute('data-theme', next);
 					localStorage.setItem('theme', next);
 				}
+
+				var wasAllDone = false;
+				document.addEventListener('htmx:afterSwap', function() {
+					var allDone = !!document.querySelector('.all-done');
+					if (allDone && !wasAllDone) {
+						confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+					}
+					wasAllDone = allDone;
+				});
 			</script>
 		</body>
 	</html>

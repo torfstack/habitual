@@ -12,33 +12,30 @@ import (
 )
 
 const createHabit = `-- name: CreateHabit :one
-INSERT INTO habits (name, description, points)
-VALUES ($1, $2, $3)
-RETURNING id, name, description, points, created_at
+INSERT INTO habits (name, description)
+VALUES ($1, $2)
+RETURNING id, name, description, created_at
 `
 
 type CreateHabitParams struct {
 	Name        string
 	Description *string
-	Points      int32
 }
 
 type CreateHabitRow struct {
 	ID          int32
 	Name        string
 	Description *string
-	Points      int32
 	CreatedAt   pgtype.Timestamptz
 }
 
 func (q *Queries) CreateHabit(ctx context.Context, arg CreateHabitParams) (CreateHabitRow, error) {
-	row := q.db.QueryRow(ctx, createHabit, arg.Name, arg.Description, arg.Points)
+	row := q.db.QueryRow(ctx, createHabit, arg.Name, arg.Description)
 	var i CreateHabitRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.Description,
-		&i.Points,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -54,7 +51,7 @@ func (q *Queries) DeleteHabit(ctx context.Context, id int32) error {
 }
 
 const listHabits = `-- name: ListHabits :many
-SELECT id, name, description, points, created_at
+SELECT id, name, description, created_at
 FROM habits
 ORDER BY created_at ASC
 `
@@ -63,7 +60,6 @@ type ListHabitsRow struct {
 	ID          int32
 	Name        string
 	Description *string
-	Points      int32
 	CreatedAt   pgtype.Timestamptz
 }
 
@@ -80,7 +76,6 @@ func (q *Queries) ListHabits(ctx context.Context) ([]ListHabitsRow, error) {
 			&i.ID,
 			&i.Name,
 			&i.Description,
-			&i.Points,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
