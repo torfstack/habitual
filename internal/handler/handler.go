@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"habitual/internal/model"
 	"habitual/internal/service"
 	"habitual/web/components"
 )
@@ -106,7 +107,15 @@ func (h *Handler) toggleHabit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	components.HabitList(habits, date).Render(r.Context(), w)
+	var toggled model.Habit
+	for _, hab := range habits {
+		if hab.ID == id {
+			toggled = hab
+			break
+		}
+	}
+
+	components.ToggleResponse(toggled, habits, date).Render(r.Context(), w)
 }
 
 func (h *Handler) deleteHabit(w http.ResponseWriter, r *http.Request) {
@@ -128,5 +137,5 @@ func (h *Handler) deleteHabit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	components.HabitList(habits, date).Render(r.Context(), w)
+	components.DeleteResponse(habits, date).Render(r.Context(), w)
 }

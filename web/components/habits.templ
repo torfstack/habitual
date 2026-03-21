@@ -61,10 +61,29 @@ templ HabitList(habits []model.Habit, date time.Time) {
 		if len(habits) == 0 {
 			<p class="empty">No habits yet. Add one below!</p>
 		}
+		<div id="all-done-banner">
+			if len(habits) > 0 && allCompleted(habits) && isToday(date) {
+				<div class="all-done">All done today! 🎉</div>
+			}
+		</div>
+	</div>
+}
+
+templ AllDoneBannerOOB(habits []model.Habit, date time.Time) {
+	<div id="all-done-banner" hx-swap-oob="outerHTML">
 		if len(habits) > 0 && allCompleted(habits) && isToday(date) {
 			<div class="all-done">All done today! 🎉</div>
 		}
 	</div>
+}
+
+templ ToggleResponse(h model.Habit, habits []model.Habit, date time.Time) {
+	@HabitRow(h, date)
+	@AllDoneBannerOOB(habits, date)
+}
+
+templ DeleteResponse(habits []model.Habit, date time.Time) {
+	@AllDoneBannerOOB(habits, date)
 }
 
 templ HabitRow(h model.Habit, date time.Time) {
@@ -75,7 +94,7 @@ templ HabitRow(h model.Habit, date time.Time) {
 		<button
 			class="toggle-btn"
 			hx-post={ fmt.Sprintf("/habits/%d/toggle?date=%s", h.ID, dateParam(date)) }
-			hx-target="#habits-list"
+			hx-target={ fmt.Sprintf("#habit-%d", h.ID) }
 			hx-swap="outerHTML"
 		>
 			if h.HasEntry {
@@ -104,7 +123,7 @@ templ HabitRow(h model.Habit, date time.Time) {
 		<button
 			class="delete-btn"
 			hx-delete={ fmt.Sprintf("/habits/%d?date=%s", h.ID, dateParam(date)) }
-			hx-target="#habits-list"
+			hx-target={ fmt.Sprintf("#habit-%d", h.ID) }
 			hx-swap="outerHTML"
 			hx-confirm="Delete this habit?"
 		>✕</button>
