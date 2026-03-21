@@ -6,12 +6,15 @@ type Habit struct {
 	ID          int
 	Name        string
 	Description string
-	Points      int
+	Target      int    // completions required per period
+	Period      string // "day", "week", "month"
 	CreatedAt   time.Time
 
 	// Computed fields (not stored)
-	CompletedToday bool
-	Streak         int
+	HasEntry    bool // entry exists on the specific queried date
+	Completed   bool // PeriodCount >= Target
+	PeriodCount int  // entries in the current period window
+	Streak      int  // consecutive completed periods
 }
 
 type Entry struct {

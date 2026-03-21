@@ -9,14 +9,33 @@ templ Layout(title string) {
 			<title>{ title } — Habitual</title>
 			<link rel="stylesheet" href="/static/css/style.css"/>
 			<script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
+			<script>
+				(function() {
+					var saved = localStorage.getItem('theme');
+					var preferred = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+					document.documentElement.setAttribute('data-theme', preferred);
+				})();
+			</script>
 		</head>
 		<body>
 			<header>
 				<h1><a href="/">Habitual</a></h1>
+				<button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+					<span class="icon-sun">☀️</span>
+					<span class="icon-moon">🌙</span>
+				</button>
 			</header>
 			<main>
 				{ children... }
 			</main>
+			<script>
+				function toggleTheme() {
+					var html = document.documentElement;
+					var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+					html.setAttribute('data-theme', next);
+					localStorage.setItem('theme', next);
+				}
+			</script>
 		</body>
 	</html>
 }

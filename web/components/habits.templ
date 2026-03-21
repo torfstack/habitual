@@ -3,17 +3,25 @@ package components
 import (
 	"fmt"
 	"habitual/internal/model"
+	"time"
 )
 
-templ HabitsPage(habits []model.Habit, todayPoints int) {
-	@Layout("Today") {
+templ HabitsPage(habits []model.Habit, date time.Time) {
+	@Layout(formatDateLabel(date)) {
 		<div class="habits-header">
-			<h2>Today</h2>
-			<span class="points-badge">{ fmt.Sprintf("%d pts", todayPoints) }</span>
+			<div class="date-nav">
+				<a href={ templ.SafeURL("/?date=" + dateParam(date.AddDate(0, 0, -1))) } class="nav-btn">←</a>
+				<span class="date-label">{ formatDateLabel(date) }</span>
+				if isToday(date) {
+					<span class="nav-btn disabled">→</span>
+				} else {
+					<a href={ templ.SafeURL("/?date=" + dateParam(date.AddDate(0, 0, 1))) } class="nav-btn">→</a>
+				}
+			</div>
 		</div>
 
 		<div id="habits-list">
-			@HabitList(habits)
+			@HabitList(habits, date)
 		</div>
 
 		<section class="add-habit">
@@ -24,35 +32,53 @@ templ HabitsPage(habits []model.Habit, todayPoints int) {
 				hx-swap="outerHTML"
 				hx-on::after-request="this.reset()"
 			>
+				<input type="hidden" name="date" value={ dateParam(date) }/>
 				<input type="text" name="name" placeholder="Habit name" required/>
 				<input type="text" name="description" placeholder="Description (optional)"/>
-				<input type="number" name="points" placeholder="Points" value="1" min="1" required/>
+				<div class="form-row">
+					<select name="frequency">
+						<option value="1:day">Every day</option>
+						<option value="2:week">2× / week</option>
+						<option value="3:week">3× / week</option>
+						<option value="4:week">4× / week</option>
+						<option value="5:week">5× / week</option>
+						<option value="1:week">Once a week</option>
+						<option value="2:month">2× / month</option>
+						<option value="1:month">Once a month</option>
+					</select>
+				</div>
 				<button type="submit">Add</button>
 			</form>
 		</section>
 	}
 }
 
-templ HabitList(habits []model.Habit) {
+templ HabitList(habits []model.Habit, date time.Time) {
 	<div id="habits-list">
 		for _, h := range habits {
-			@HabitRow(h)
+			@HabitRow(h, date)
 		}
 		if len(habits) == 0 {
 			<p class="empty">No habits yet. Add one below!</p>
 		}
+		if len(habits) > 0 && allCompleted(habits) && isToday(date) {
+			<div class="all-done">All done today! 🎉</div>
+		}
 	</div>
 }
 
-templ HabitRow(h model.Habit) {
-	<div class={ "habit-row", templ.KV("completed", h.CompletedToday) } id={ fmt.Sprintf("habit-%d", h.ID) }>
+templ HabitRow(h model.Habit, date time.Time) {
+	<div
+		class={ "habit-row", templ.KV("completed", h.Completed), templ.KV("has-entry", h.HasEntry && !h.Completed) }
+		id={ fmt.Sprintf("habit-%d", h.ID) }
+	>
 		<button
 			class="toggle-btn"
-			hx-post={ fmt.Sprintf("/habits/%d/toggle", h.ID) }
-			hx-target={ fmt.Sprintf("#habit-%d", h.ID) }
+			hx-post={ fmt.Sprintf("/habits/%d/toggle?date=%s", h.ID, dateParam(date)) }
+			hx-target="#habits-list"
 			hx-swap="outerHTML"
 		>
-			if h.CompletedToday {
+			if h.HasEntry {
 				✓
 			} else {
 				○
@@ -65,14 +91,19 @@ templ HabitRow(h model.Habit) {
 			}
 		</div>
 		<div class="habit-meta">
-			<span class="habit-points">{ fmt.Sprintf("+%d", h.Points) }</span>
-			if h.Streak > 1 {
+			if h.Streak >= 1 {
 				<span class="habit-streak">{ fmt.Sprintf("🔥 %d", h.Streak) }</span>
+			}
+			if h.Period != "day" {
+				<span class="habit-progress">
+					{ fmt.Sprintf("%d/%d", h.PeriodCount, h.Target) }
+					<span class="habit-freq">{ freqLabel(h.Target, h.Period) }</span>
+				</span>
 			}
 		</div>
 		<button
 			class="delete-btn"
-			hx-delete={ fmt.Sprintf("/habits/%d", h.ID) }
+			hx-delete={ fmt.Sprintf("/habits/%d?date=%s", h.ID, dateParam(date)) }
 			hx-target="#habits-list"
 			hx-swap="outerHTML"
 			hx-confirm="Delete this habit?"

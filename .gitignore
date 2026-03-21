@@ -1,2 +1,24 @@
-.env
-habitual
+# Build output
+./habitual
+
+# Go
+*.test
+*.out
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+*.sqlite
+
+# Kubernetes secrets (contain real credentials)
+k8s/secret.yaml

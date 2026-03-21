@@ -14,6 +14,18 @@
   --gap: 1rem;
 }
 
+[data-theme="light"] {
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --border: #e2e4ef;
+  --text: #1a1d27;
+  --muted: #6b7280;
+  --accent: #7c6af7;
+  --accent-hover: #6356d6;
+  --success: #16a34a;
+  --danger: #dc2626;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -25,6 +37,9 @@ body {
 header {
   padding: 1.25rem 2rem;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 header h1 a {
@@ -34,6 +49,24 @@ header h1 a {
   font-weight: 700;
   letter-spacing: -0.5px;
 }
+
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  transition: border-color 0.15s;
+}
+.theme-toggle:hover { border-color: var(--accent); }
+
+/* show sun in dark mode (click to go light), moon in light mode (click to go dark) */
+.icon-moon { display: none; }
+[data-theme="light"] .icon-sun { display: none; }
+[data-theme="light"] .icon-moon { display: inline; }
 
 main {
   max-width: 640px;
@@ -51,19 +84,40 @@ main {
   justify-content: space-between;
 }
 
+/* Date navigation */
+.date-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-label {
+  font-size: 1.1rem;
+  font-weight: 700;
+  min-width: 8rem;
+  text-align: center;
+}
+
+.nav-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-decoration: none;
+  line-height: 1.5;
+  transition: border-color 0.15s;
+}
+.nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+.nav-btn.disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+
 .habits-header h2 {
   font-size: 1.5rem;
   font-weight: 700;
 }
 
-.points-badge {
-  background: var(--accent);
-  color: #fff;
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-}
 
 /* Habit rows */
 #habits-list {
@@ -86,6 +140,11 @@ main {
 .habit-row.completed {
   border-color: var(--success);
   opacity: 0.75;
+}
+
+.habit-row.has-entry {
+  border-color: var(--accent);
+  opacity: 0.85;
 }
 
 .toggle-btn {
@@ -128,6 +187,8 @@ main {
 
 .habit-points { color: var(--accent); font-weight: 600; }
 .habit-streak { font-size: 0.75rem; }
+.habit-progress { font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; gap: 0.3rem; }
+.habit-freq { font-size: 0.7rem; }
 
 .delete-btn {
   background: none;
@@ -142,6 +203,14 @@ main {
 .delete-btn:hover { color: var(--danger); }
 
 .empty { color: var(--muted); font-size: 0.9rem; text-align: center; padding: 2rem 0; }
+
+.all-done {
+  text-align: center;
+  padding: 1rem 0 0.5rem;
+  color: var(--success);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
 
 /* Add habit form */
 .add-habit {
@@ -158,6 +227,24 @@ main {
   flex-direction: column;
   gap: 0.5rem;
 }
+
+.form-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.form-row input { flex: 1; }
+.form-row select {
+  flex: 2;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  outline: none;
+  cursor: pointer;
+}
+.form-row select:focus { border-color: var(--accent); }
 
 .add-habit input {
   background: var(--bg);
