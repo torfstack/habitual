@@ -94,7 +94,10 @@ func (s *HabitService) List(ctx context.Context, date time.Time) ([]model.Habit,
 			                  WHEN 'month' THEN '1 month'::interval
 			                END)::date
 		) pc
-		WHERE (h.deleted_at IS NULL OR h.deleted_at::date > $1::date)
+		WHERE (h.created_at::date <= $1::date OR EXISTS(
+			SELECT 1 FROM entries WHERE habit_id = h.id AND day <= $1::date
+		))
+		  AND (h.deleted_at IS NULL OR h.deleted_at::date > $1::date)
 		ORDER BY h.created_at ASC
 	`, day)
 	if err != nil {
@@ -152,6 +155,60 @@ func (s *HabitService) List(ctx context.Context, date time.Time) ([]model.Habit,
 	return habits, nil
 }
 
+// MonthSummary returns per-day completion data for the month containing the given date.
+// Keys in the returned map are "YYYY-MM-DD" strings.
+func (s *HabitService) MonthSummary(ctx context.Context, month time.Time) (map[string]model.DaySummary, error) {
+	rows, err := s.db.Query(ctx, `
+		WITH day_series AS (
+			SELECT generate_series(
+				DATE_TRUNC('month', $1::date)::date,
+				(DATE_TRUNC('month', $1::date) + '1 month'::interval - '1 day'::interval)::date,
+				'1 day'::interval
+			)::date AS day
+		),
+		active_per_day AS (
+			SELECT d.day, COUNT(h.id) AS active_count
+			FROM day_series d
+			LEFT JOIN habits h ON h.created_at::date <= d.day
+				AND (h.deleted_at IS NULL OR h.deleted_at::date > d.day)
+			GROUP BY d.day
+		),
+		entries_per_day AS (
+			SELECT e.day, COUNT(DISTINCT e.habit_id) AS entry_count
+			FROM entries e
+			JOIN habits h ON h.id = e.habit_id
+			WHERE e.day >= DATE_TRUNC('month', $1::date)::date
+			  AND e.day <  (DATE_TRUNC('month', $1::date) + '1 month'::interval)::date
+			GROUP BY e.day
+		)
+		SELECT
+			apd.day,
+			COALESCE(epd.entry_count, 0) AS entry_count,
+			apd.active_count
+		FROM active_per_day apd
+		LEFT JOIN entries_per_day epd ON epd.day = apd.day
+		ORDER BY apd.day
+	`, month.Format("2006-01-02"))
+	if err != nil {
+		return nil, fmt.Errorf("month summary: %w", err)
+	}
+	defer rows.Close()
+
+	result := map[string]model.DaySummary{}
+	for rows.Next() {
+		var day time.Time
+		var entryCount, activeCount int
+		if err := rows.Scan(&day, &entryCount, &activeCount); err != nil {
+			return nil, fmt.Errorf("scan day summary: %w", err)
+		}
+		result[day.Format("2006-01-02")] = model.DaySummary{
+			HasEntry: entryCount > 0,
+			AllDone:  activeCount > 0 && entryCount >= activeCount,
+		}
+	}
+	return result, rows.Err()
+}
+
 func (s *HabitService) Create(ctx context.Context, name, description string, target int, period string) (model.Habit, error) {
 	var h model.Habit
 	err := s.db.QueryRow(ctx,
@@ -165,8 +222,12 @@ func (s *HabitService) Create(ctx context.Context, name, description string, tar
 	return h, nil
 }
 
-func (s *HabitService) Delete(ctx context.Context, id int) error {
-	_, err := s.db.Exec(ctx, `UPDATE habits SET deleted_at = NOW() WHERE id = $1`, id)
+// Delete soft-deletes the habit, using date as the effective deletion date so
+// the habit is excluded from that date onwards but remains visible in earlier history.
+func (s *HabitService) Delete(ctx context.Context, id int, date time.Time) error {
+	_, err := s.db.Exec(ctx,
+		`UPDATE habits SET deleted_at = $2::date WHERE id = $1`,
+		id, date.Format("2006-01-02"))
 	return err
 }
 

@@ -23,3 +23,15 @@ run = "go build -o habitual ./cmd/habitual"
 [tasks.dev]
 description = "Run the server (requires DATABASE_URL)"
 run = "go run ./cmd/habitual"
+
+[tasks.docker-rebuild]
+description = "Tear down and rebuild Docker containers"
+run = ["docker compose down", "docker compose up -d --build"]
+
+[tasks.docker-up]
+description = "Build and start Docker containers"
+run = "docker compose up -d --build"
+
+[tasks.docker-publish]
+description = "Build and publish the Docker image"
+run = "docker buildx build . -t ghcr.io/torfstack/habitual:latest --push"

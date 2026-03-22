@@ -116,7 +116,7 @@ func TestHabitService(t *testing.T) {
 		h, err := svc.Create(ctx, "Temporary", "", 1, "day")
 		require.NoError(t, err)
 
-		err = svc.Delete(ctx, h.ID)
+		err = svc.Delete(ctx, h.ID, today)
 		require.NoError(t, err)
 
 		habits, err := svc.List(ctx, today)
@@ -133,7 +133,7 @@ func TestHabitService(t *testing.T) {
 		_, err = svc.Toggle(ctx, h.ID, yesterday)
 		require.NoError(t, err)
 
-		err = svc.Delete(ctx, h.ID)
+		err = svc.Delete(ctx, h.ID, today)
 		require.NoError(t, err)
 
 		// should be gone from today

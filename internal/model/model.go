@@ -23,3 +23,9 @@ type Entry struct {
 	Day       time.Time
 	CreatedAt time.Time
 }
+
+// DaySummary holds completion status for a single calendar day.
+type DaySummary struct {
+	HasEntry bool // at least one habit has an entry
+	AllDone  bool // all active habits have entries
+}

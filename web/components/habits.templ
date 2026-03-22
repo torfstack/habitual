@@ -6,12 +6,20 @@ import (
 	"time"
 )
 
-templ HabitsPage(habits []model.Habit, date time.Time) {
+templ HabitsPage(habits []model.Habit, date time.Time, summaries map[string]model.DaySummary) {
 	@Layout(formatDateLabel(date)) {
 		<div class="habits-header">
 			<div class="date-nav">
 				<a href={ templ.SafeURL("/?date=" + dateParam(date.AddDate(0, 0, -1))) } class="nav-btn">←</a>
-				<span class="date-label">{ formatDateLabel(date) }</span>
+				<details class="date-picker-wrapper" id="date-picker">
+					<summary class="date-label date-picker-toggle">
+						{ formatDateLabel(date) }
+						<span class="date-picker-chevron">▾</span>
+					</summary>
+					<div class="date-picker-dropdown">
+						@CalendarGrid(firstOfMonth(date), summaries, date)
+					</div>
+				</details>
 				if isToday(date) {
 					<span class="nav-btn disabled">→</span>
 				} else {
@@ -24,6 +32,7 @@ templ HabitsPage(habits []model.Habit, date time.Time) {
 			@HabitList(habits, date)
 		</div>
 
+		if isToday(date) {
 		<section class="add-habit">
 			<h3>Add habit</h3>
 			<form
@@ -50,6 +59,64 @@ templ HabitsPage(habits []model.Habit, date time.Time) {
 				<button type="submit">Add</button>
 			</form>
 		</section>
+		}
+	}
+}
+
+templ CalendarGrid(month time.Time, summaries map[string]model.DaySummary, selectedDate time.Time) {
+	<div class="calendar" id="habitual-calendar">
+		<div class="calendar-header">
+			<button
+				class="cal-nav-btn"
+				hx-get={ "/calendar?month=" + prevMonth(month).Format("2006-01") + "&date=" + dateParam(selectedDate) }
+				hx-target="#habitual-calendar"
+				hx-swap="outerHTML"
+			>←</button>
+			<span class="cal-month-label">{ month.Format("January 2006") }</span>
+			if isCurrentMonth(month) {
+				<span class="cal-nav-btn disabled">→</span>
+			} else {
+				<button
+					class="cal-nav-btn"
+					hx-get={ "/calendar?month=" + nextMonth(month).Format("2006-01") + "&date=" + dateParam(selectedDate) }
+					hx-target="#habitual-calendar"
+					hx-swap="outerHTML"
+				>→</button>
+			}
+		</div>
+		<div class="cal-grid">
+			<span class="cal-dow">Mo</span>
+			<span class="cal-dow">Tu</span>
+			<span class="cal-dow">We</span>
+			<span class="cal-dow">Th</span>
+			<span class="cal-dow">Fr</span>
+			<span class="cal-dow">Sa</span>
+			<span class="cal-dow">Su</span>
+			for _, day := range calendarDays(month) {
+				@calDayCell(day, month, selectedDate, summaries)
+			}
+		</div>
+	</div>
+}
+
+templ calDayCell(day, month, selected time.Time, summaries map[string]model.DaySummary) {
+	if isFutureDay(day) || !isSameMonth(day, month) {
+		<span class={
+			"cal-day",
+			templ.KV("future", isFutureDay(day)),
+			templ.KV("other-month", !isSameMonth(day, month)),
+		}>{ fmt.Sprintf("%d", day.Day()) }</span>
+	} else {
+		<a
+			href={ templ.SafeURL("/?date=" + dateParam(day)) }
+			class={
+				"cal-day",
+				templ.KV("today", isToday(day)),
+				templ.KV("selected", isSameDay(day, selected)),
+				templ.KV("all-done", summaries[dateParam(day)].AllDone),
+				templ.KV("has-entry", summaries[dateParam(day)].HasEntry && !summaries[dateParam(day)].AllDone),
+			}
+		>{ fmt.Sprintf("%d", day.Day()) }</a>
 	}
 }
 
@@ -59,7 +126,11 @@ templ HabitList(habits []model.Habit, date time.Time) {
 			@HabitRow(h, date)
 		}
 		if len(habits) == 0 {
-			<p class="empty">No habits yet. Add one below!</p>
+			if isToday(date) {
+				<p class="empty">No habits yet. Add one below!</p>
+			} else {
+				<p class="empty">No habits on this day.</p>
+			}
 		}
 		<div id="all-done-banner">
 			if len(habits) > 0 && allCompleted(habits) && isToday(date) {

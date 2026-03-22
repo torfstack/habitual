@@ -23,6 +23,7 @@ func New(habits *service.HabitService) *Handler {
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /", h.index)
+	mux.HandleFunc("GET /calendar", h.calendar)
 	mux.HandleFunc("POST /habits", h.createHabit)
 	mux.HandleFunc("POST /habits/{id}/toggle", h.toggleHabit)
 	mux.HandleFunc("DELETE /habits/{id}", h.deleteHabit)
@@ -55,7 +56,41 @@ func (h *Handler) index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	components.HabitsPage(habits, date).Render(r.Context(), w)
+	summaries, err := h.habits.MonthSummary(r.Context(), date)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	components.HabitsPage(habits, date, summaries).Render(r.Context(), w)
+}
+
+func (h *Handler) calendar(w http.ResponseWriter, r *http.Request) {
+	monthStr := r.URL.Query().Get("month")
+	var month time.Time
+	if t, err := time.Parse("2006-01", monthStr); err == nil {
+		month = t
+	} else {
+		now := time.Now().UTC()
+		month = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	}
+
+	// Clamp to current month — don't allow future months
+	now := time.Now().UTC()
+	currentMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	if month.After(currentMonth) {
+		month = currentMonth
+	}
+
+	selectedDate := parseDateParam(r)
+
+	summaries, err := h.habits.MonthSummary(r.Context(), month)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	components.CalendarGrid(month, summaries, selectedDate).Render(r.Context(), w)
 }
 
 func (h *Handler) createHabit(w http.ResponseWriter, r *http.Request) {
@@ -125,12 +160,13 @@ func (h *Handler) deleteHabit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.habits.Delete(r.Context(), id); err != nil {
+	date := parseDateParam(r)
+
+	if err := h.habits.Delete(r.Context(), id, date); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	date := parseDateParam(r)
 	habits, err := h.habits.List(r.Context(), date)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
