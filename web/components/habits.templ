@@ -8,58 +8,76 @@ import (
 
 templ HabitsPage(habits []model.Habit, date time.Time, summaries map[string]model.DaySummary) {
 	@Layout(formatDateLabel(date)) {
-		<div class="habits-header">
-			<div class="date-nav">
-				<a href={ templ.SafeURL("/?date=" + dateParam(date.AddDate(0, 0, -1))) } class="nav-btn">←</a>
-				<details class="date-picker-wrapper" id="date-picker">
-					<summary class="date-label date-picker-toggle">
-						{ formatDateLabel(date) }
-						<span class="date-picker-chevron">▾</span>
-					</summary>
-					<div class="date-picker-dropdown">
-						@CalendarGrid(firstOfMonth(date), summaries, date)
-					</div>
-				</details>
-				if isToday(date) {
-					<span class="nav-btn disabled">→</span>
-				} else {
-					<a href={ templ.SafeURL("/?date=" + dateParam(date.AddDate(0, 0, 1))) } class="nav-btn">→</a>
-				}
-			</div>
-		</div>
+		@HabitsContent(habits, date, summaries)
+	}
+}
 
-		<div id="habits-list">
-			@HabitList(habits, date)
-		</div>
-
-		if isToday(date) {
-		<section class="add-habit">
-			<h3>Add habit</h3>
-			<form
-				hx-post="/habits"
-				hx-target="#habits-list"
-				hx-swap="outerHTML"
-				hx-on::after-request="this.reset()"
-			>
-				<input type="hidden" name="date" value={ dateParam(date) }/>
-				<input type="text" name="name" placeholder="Habit name" required/>
-				<input type="text" name="description" placeholder="Description (optional)"/>
-				<div class="form-row">
-					<select name="frequency">
-						<option value="1:day">Every day</option>
-						<option value="2:week">2× / week</option>
-						<option value="3:week">3× / week</option>
-						<option value="4:week">4× / week</option>
-						<option value="5:week">5× / week</option>
-						<option value="1:week">Once a week</option>
-						<option value="2:month">2× / month</option>
-						<option value="1:month">Once a month</option>
-					</select>
+templ HabitsContent(habits []model.Habit, date time.Time, summaries map[string]model.DaySummary) {
+	<div class="habits-header">
+		<div class="date-nav">
+			<a
+				href={ templ.SafeURL("/?date=" + dateParam(date.AddDate(0, 0, -1))) }
+				hx-get={ "/day?date=" + dateParam(date.AddDate(0, 0, -1)) }
+				hx-target="#day-content"
+				hx-swap="innerHTML"
+				hx-push-url={ "/?date=" + dateParam(date.AddDate(0, 0, -1)) }
+				class="nav-btn"
+			>←</a>
+			<details class="date-picker-wrapper" id="date-picker">
+				<summary class="date-label date-picker-toggle">
+					{ formatDateLabel(date) }
+					<span class="date-picker-chevron">▾</span>
+				</summary>
+				<div class="date-picker-dropdown">
+					@CalendarGrid(firstOfMonth(date), summaries, date)
 				</div>
-				<button type="submit">Add</button>
-			</form>
-		</section>
-		}
+			</details>
+			if isToday(date) {
+				<span class="nav-btn disabled">→</span>
+			} else {
+				<a
+					href={ templ.SafeURL("/?date=" + dateParam(date.AddDate(0, 0, 1))) }
+					hx-get={ "/day?date=" + dateParam(date.AddDate(0, 0, 1)) }
+					hx-target="#day-content"
+					hx-swap="innerHTML"
+					hx-push-url={ "/?date=" + dateParam(date.AddDate(0, 0, 1)) }
+					class="nav-btn"
+				>→</a>
+			}
+		</div>
+	</div>
+
+	<div id="habits-list">
+		@HabitList(habits, date)
+	</div>
+
+	if isToday(date) {
+	<section class="add-habit">
+		<h3>Add habit</h3>
+		<form
+			hx-post="/habits"
+			hx-target="#habits-list"
+			hx-swap="outerHTML"
+			hx-on::after-request="this.reset()"
+		>
+			<input type="hidden" name="date" value={ dateParam(date) }/>
+			<input type="text" name="name" placeholder="Habit name" required/>
+			<input type="text" name="description" placeholder="Description (optional)"/>
+			<div class="form-row">
+				<select name="frequency">
+					<option value="1:day">Every day</option>
+					<option value="2:week">2× / week</option>
+					<option value="3:week">3× / week</option>
+					<option value="4:week">4× / week</option>
+					<option value="5:week">5× / week</option>
+					<option value="1:week">Once a week</option>
+					<option value="2:month">2× / month</option>
+					<option value="1:month">Once a month</option>
+				</select>
+			</div>
+			<button type="submit">Add</button>
+		</form>
+	</section>
 	}
 }
 
@@ -109,6 +127,10 @@ templ calDayCell(day, month, selected time.Time, summaries map[string]model.DayS
 	} else {
 		<a
 			href={ templ.SafeURL("/?date=" + dateParam(day)) }
+			hx-get={ "/day?date=" + dateParam(day) }
+			hx-target="#day-content"
+			hx-swap="innerHTML"
+			hx-push-url={ "/?date=" + dateParam(day) }
 			class={
 				"cal-day",
 				templ.KV("today", isToday(day)),
