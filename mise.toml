@@ -35,3 +35,11 @@ run = "docker compose up -d --build"
 [tasks.docker-publish]
 description = "Build and publish the Docker image"
 run = "docker buildx build . -t ghcr.io/torfstack/habitual:latest --push"
+
+[tasks.deploy]
+description = "Publish Docker image and deploy to Kubernetes via Helm"
+run = [
+  "mise run docker-publish",
+  "helm upgrade --install habitual ./deployment",
+]
+

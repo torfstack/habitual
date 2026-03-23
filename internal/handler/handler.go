@@ -169,6 +169,12 @@ func (h *Handler) toggleHabit(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	today := time.Now()
+	isToday := date.Year() == today.Year() && date.Month() == today.Month() && date.Day() == today.Day()
+	if isToday && len(habits) > 0 && allCompleted(habits) {
+		w.Header().Set("HX-Trigger", "confetti")
+	}
+
 	components.ToggleResponse(toggled, habits, date).Render(r.Context(), w)
 }
 
@@ -193,4 +199,13 @@ func (h *Handler) deleteHabit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	components.DeleteResponse(habits, date).Render(r.Context(), w)
+}
+
+func allCompleted(habits []model.Habit) bool {
+	for _, h := range habits {
+		if !h.Completed {
+			return false
+		}
+	}
+	return true
 }

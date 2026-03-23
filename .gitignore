@@ -21,4 +21,4 @@ Thumbs.db
 *.sqlite
 
 # Kubernetes secrets (contain real credentials)
-deployment/secret.yaml
+deployment/templates/secret.yaml

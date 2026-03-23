@@ -50,7 +50,7 @@ func Layout(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</main><script>\n\t\t\t\tfunction toggleTheme() {\n\t\t\t\t\tvar html = document.documentElement;\n\t\t\t\t\tvar next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';\n\t\t\t\t\thtml.setAttribute('data-theme', next);\n\t\t\t\t\tlocalStorage.setItem('theme', next);\n\t\t\t\t}\n\n\t\t\t\tvar wasAllDone = false;\n\t\t\t\tdocument.addEventListener('htmx:afterSwap', function() {\n\t\t\t\t\tvar allDone = !!document.querySelector('.all-done');\n\t\t\t\t\tif (allDone && !wasAllDone) {\n\t\t\t\t\t\tconfetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });\n\t\t\t\t\t}\n\t\t\t\t\twasAllDone = allDone;\n\t\t\t\t});\n\t\t\t</script></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</main><script>\n\t\t\t\tfunction toggleTheme() {\n\t\t\t\t\tvar html = document.documentElement;\n\t\t\t\t\tvar next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';\n\t\t\t\t\thtml.setAttribute('data-theme', next);\n\t\t\t\t\tlocalStorage.setItem('theme', next);\n\t\t\t\t}\n\n\t\t\t\tdocument.addEventListener('confetti', function() {\n\t\t\t\t\tconfetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });\n\t\t\t\t});\n\t\t\t</script></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

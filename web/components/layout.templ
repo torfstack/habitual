@@ -37,13 +37,8 @@ templ Layout(title string) {
 					localStorage.setItem('theme', next);
 				}
 
-				var wasAllDone = false;
-				document.addEventListener('htmx:afterSwap', function() {
-					var allDone = !!document.querySelector('.all-done');
-					if (allDone && !wasAllDone) {
-						confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-					}
-					wasAllDone = allDone;
+				document.addEventListener('confetti', function() {
+					confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
 				});
 			</script>
 		</body>
