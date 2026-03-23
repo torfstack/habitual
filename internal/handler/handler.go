@@ -23,6 +23,7 @@ func New(habits *service.HabitService) *Handler {
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /", h.index)
+	mux.HandleFunc("GET /day", h.day)
 	mux.HandleFunc("GET /calendar", h.calendar)
 	mux.HandleFunc("POST /habits", h.createHabit)
 	mux.HandleFunc("POST /habits/{id}/toggle", h.toggleHabit)
@@ -63,6 +64,24 @@ func (h *Handler) index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	components.HabitsPage(habits, date, summaries).Render(r.Context(), w)
+}
+
+func (h *Handler) day(w http.ResponseWriter, r *http.Request) {
+	date := parseDateParam(r)
+
+	habits, err := h.habits.List(r.Context(), date)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	summaries, err := h.habits.MonthSummary(r.Context(), date)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	components.HabitsContent(habits, date, summaries).Render(r.Context(), w)
 }
 
 func (h *Handler) calendar(w http.ResponseWriter, r *http.Request) {
@@ -150,6 +169,12 @@ func (h *Handler) toggleHabit(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	today := time.Now()
+	isToday := date.Year() == today.Year() && date.Month() == today.Month() && date.Day() == today.Day()
+	if isToday && len(habits) > 0 && allCompleted(habits) {
+		w.Header().Set("HX-Trigger", "confetti")
+	}
+
 	components.ToggleResponse(toggled, habits, date).Render(r.Context(), w)
 }
 
@@ -174,4 +199,13 @@ func (h *Handler) deleteHabit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	components.DeleteResponse(habits, date).Render(r.Context(), w)
+}
+
+func allCompleted(habits []model.Habit) bool {
+	for _, h := range habits {
+		if !h.Completed {
+			return false
+		}
+	}
+	return true
 }
