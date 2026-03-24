@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"habitual/internal/auth"
 	"habitual/internal/db"
 	"habitual/internal/handler"
 	"habitual/internal/service"
@@ -25,7 +26,8 @@ func main() {
 	}
 
 	habitSvc := service.NewHabitService(pool)
-	h := handler.New(habitSvc)
+	authSvc := auth.NewService(pool)
+	h := handler.New(habitSvc, authSvc)
 
 	mux := http.NewServeMux()
 	h.RegisterRoutes(mux)

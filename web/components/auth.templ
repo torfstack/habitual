@@ -1,0 +1,19 @@
+package components
+
+templ LoginPage(authEnabled bool) {
+	@Layout("Login", nil) {
+		<section class="login-card">
+			<p class="eyebrow">Private habits, per account</p>
+			<h2>Sign in to Habitual</h2>
+			<p class="login-copy">Google login now owns habit data per user, so your check-ins and history stay scoped to your account.</p>
+			if authEnabled {
+				<a href="/auth/google" class="google-login-btn">Continue with Google</a>
+			} else {
+				<div class="login-disabled">
+					<p>Google login is not configured.</p>
+					<p class="login-hint">Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URL`, then reload the app.</p>
+				</div>
+			}
+		</section>
+	}
+}

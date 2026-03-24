@@ -22,6 +22,9 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:password@db:5432/habitual?sslmode=disable
       ADDR: :8080
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URL: ${GOOGLE_REDIRECT_URL:-http://localhost:8080/auth/google/callback}
     depends_on:
       db:
         condition: service_healthy

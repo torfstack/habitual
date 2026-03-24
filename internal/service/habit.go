@@ -76,12 +76,12 @@ func computeStreak(entries []time.Time, period string, target int, date time.Tim
 	return streak
 }
 
-func (s *HabitService) List(ctx context.Context, date time.Time) ([]model.Habit, error) {
+func (s *HabitService) List(ctx context.Context, userID int, date time.Time) ([]model.Habit, error) {
 	day := date.Format("2006-01-02")
 
 	rows, err := s.db.Query(ctx, `
 		SELECT
-			h.id, h.name, h.description, h.target, h.period, h.created_at,
+			h.id, h.user_id, h.name, h.description, h.target, h.period, h.created_at,
 			EXISTS(
 				SELECT 1 FROM entries WHERE habit_id = h.id AND day = $1::date
 			) AS has_entry,
@@ -103,9 +103,10 @@ func (s *HabitService) List(ctx context.Context, date time.Time) ([]model.Habit,
 		WHERE (h.created_at::date <= $1::date OR EXISTS(
 			SELECT 1 FROM entries WHERE habit_id = h.id AND day <= $1::date
 		))
+		  AND h.user_id = $2
 		  AND (h.deleted_at IS NULL OR h.deleted_at::date > $1::date)
 		ORDER BY h.created_at ASC
-	`, day)
+	`, day, userID)
 	if err != nil {
 		return nil, fmt.Errorf("list habits: %w", err)
 	}
@@ -115,7 +116,7 @@ func (s *HabitService) List(ctx context.Context, date time.Time) ([]model.Habit,
 	for rows.Next() {
 		var h model.Habit
 		if err := rows.Scan(
-			&h.ID, &h.Name, &h.Description, &h.Target, &h.Period, &h.CreatedAt,
+			&h.ID, &h.UserID, &h.Name, &h.Description, &h.Target, &h.Period, &h.CreatedAt,
 			&h.HasEntry, &h.PeriodCount, &h.Completed,
 		); err != nil {
 			return nil, fmt.Errorf("scan habit: %w", err)
@@ -163,7 +164,7 @@ func (s *HabitService) List(ctx context.Context, date time.Time) ([]model.Habit,
 
 // MonthSummary returns per-day completion data for the month containing the given date.
 // Keys in the returned map are "YYYY-MM-DD" strings.
-func (s *HabitService) MonthSummary(ctx context.Context, month time.Time) (map[string]model.DaySummary, error) {
+func (s *HabitService) MonthSummary(ctx context.Context, userID int, month time.Time) (map[string]model.DaySummary, error) {
 	rows, err := s.db.Query(ctx, `
 		WITH day_series AS (
 			SELECT generate_series(
@@ -176,6 +177,7 @@ func (s *HabitService) MonthSummary(ctx context.Context, month time.Time) (map[s
 			SELECT d.day, COUNT(h.id) AS active_count
 			FROM day_series d
 			LEFT JOIN habits h ON h.created_at::date <= d.day
+				AND h.user_id = $2
 				AND (h.deleted_at IS NULL OR h.deleted_at::date > d.day)
 			GROUP BY d.day
 		),
@@ -185,6 +187,7 @@ func (s *HabitService) MonthSummary(ctx context.Context, month time.Time) (map[s
 			JOIN habits h ON h.id = e.habit_id
 			WHERE e.day >= DATE_TRUNC('month', $1::date)::date
 			  AND e.day <  (DATE_TRUNC('month', $1::date) + '1 month'::interval)::date
+			  AND h.user_id = $2
 			GROUP BY e.day
 		)
 		SELECT
@@ -194,7 +197,7 @@ func (s *HabitService) MonthSummary(ctx context.Context, month time.Time) (map[s
 		FROM active_per_day apd
 		LEFT JOIN entries_per_day epd ON epd.day = apd.day
 		ORDER BY apd.day
-	`, month.Format("2006-01-02"))
+	`, month.Format("2006-01-02"), userID)
 	if err != nil {
 		return nil, fmt.Errorf("month summary: %w", err)
 	}
@@ -215,13 +218,13 @@ func (s *HabitService) MonthSummary(ctx context.Context, month time.Time) (map[s
 	return result, rows.Err()
 }
 
-func (s *HabitService) Create(ctx context.Context, name, description string, target int, period string) (model.Habit, error) {
+func (s *HabitService) Create(ctx context.Context, userID int, name, description string, target int, period string) (model.Habit, error) {
 	var h model.Habit
 	err := s.db.QueryRow(ctx,
-		`INSERT INTO habits (name, description, target, period) VALUES ($1, $2, $3, $4)
-		 RETURNING id, name, description, target, period, created_at`,
-		name, description, target, period,
-	).Scan(&h.ID, &h.Name, &h.Description, &h.Target, &h.Period, &h.CreatedAt)
+		`INSERT INTO habits (user_id, name, description, target, period) VALUES ($1, $2, $3, $4, $5)
+		 RETURNING id, user_id, name, description, target, period, created_at`,
+		userID, name, description, target, period,
+	).Scan(&h.ID, &h.UserID, &h.Name, &h.Description, &h.Target, &h.Period, &h.CreatedAt)
 	if err != nil {
 		return h, fmt.Errorf("create habit: %w", err)
 	}
@@ -230,24 +233,30 @@ func (s *HabitService) Create(ctx context.Context, name, description string, tar
 
 // Delete soft-deletes the habit, using date as the effective deletion date so
 // the habit is excluded from that date onwards but remains visible in earlier history.
-func (s *HabitService) Delete(ctx context.Context, id int, date time.Time) error {
-	_, err := s.db.Exec(ctx,
-		`UPDATE habits SET deleted_at = $2::date WHERE id = $1`,
-		id, date.Format("2006-01-02"))
-	return err
+func (s *HabitService) Delete(ctx context.Context, userID, id int, date time.Time) error {
+	tag, err := s.db.Exec(ctx,
+		`UPDATE habits SET deleted_at = $3::date WHERE id = $1 AND user_id = $2`,
+		id, userID, date.Format("2006-01-02"))
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrHabitNotFound
+	}
+	return nil
 }
 
 // Toggle adds or removes the entry for the habit on the given date.
 // Returns true if an entry was created, false if it was removed.
-func (s *HabitService) Toggle(ctx context.Context, habitID int, date time.Time) (hasEntry bool, err error) {
+func (s *HabitService) Toggle(ctx context.Context, userID, habitID int, date time.Time) (hasEntry bool, err error) {
 	day := date.Format("2006-01-02")
 	date = dateutil.StartOfDay(date)
 
 	var createdAt time.Time
 	var deletedAt *time.Time
 	err = s.db.QueryRow(ctx,
-		`SELECT created_at, deleted_at FROM habits WHERE id = $1`,
-		habitID,
+		`SELECT created_at, deleted_at FROM habits WHERE id = $1 AND user_id = $2`,
+		habitID, userID,
 	).Scan(&createdAt, &deletedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

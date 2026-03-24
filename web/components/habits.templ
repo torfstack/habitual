@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-templ HabitsPage(habits []model.Habit, date time.Time, summaries map[string]model.DaySummary) {
-	@Layout(formatDateLabel(date)) {
+templ HabitsPage(user *model.User, habits []model.Habit, date time.Time, summaries map[string]model.DaySummary) {
+	@Layout(formatDateLabel(date), user) {
 		@HabitsContent(habits, date, summaries)
 	}
 }
