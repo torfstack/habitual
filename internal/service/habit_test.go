@@ -59,6 +59,16 @@ func setupDB(t *testing.T) *pgxpool.Pool {
 	return pool
 }
 
+func setHabitCreatedAt(t *testing.T, pool *pgxpool.Pool, habitID int, createdAt time.Time) {
+	t.Helper()
+
+	_, err := pool.Exec(context.Background(),
+		`UPDATE habits SET created_at = $2 WHERE id = $1`,
+		habitID, createdAt,
+	)
+	require.NoError(t, err)
+}
+
 func TestHabitService(t *testing.T) {
 	pool := setupDB(t)
 	svc := service.NewHabitService(pool)
@@ -129,6 +139,7 @@ func TestHabitService(t *testing.T) {
 	t.Run("Delete preserves habit in past dates", func(t *testing.T) {
 		h, err := svc.Create(ctx, "Was active yesterday", "", 1, "day")
 		require.NoError(t, err)
+		setHabitCreatedAt(t, pool, h.ID, yesterday.AddDate(0, 0, -1))
 
 		_, err = svc.Toggle(ctx, h.ID, yesterday)
 		require.NoError(t, err)
@@ -159,6 +170,7 @@ func TestHabitService(t *testing.T) {
 	t.Run("Weekly habit period_count and completion", func(t *testing.T) {
 		h, err := svc.Create(ctx, "Gym", "", 2, "week")
 		require.NoError(t, err)
+		setHabitCreatedAt(t, pool, h.ID, yesterday.AddDate(0, 0, -1))
 
 		// one entry — not yet complete for the week
 		_, err = svc.Toggle(ctx, h.ID, today)
@@ -195,6 +207,7 @@ func TestHabitService(t *testing.T) {
 	t.Run("Streak increments on consecutive days", func(t *testing.T) {
 		h, err := svc.Create(ctx, "Streak habit", "", 1, "day")
 		require.NoError(t, err)
+		setHabitCreatedAt(t, pool, h.ID, yesterday.AddDate(0, 0, -1))
 
 		// no entries yet — streak should be 0
 		habits, err := svc.List(ctx, today)
@@ -231,6 +244,7 @@ func TestHabitService(t *testing.T) {
 	t.Run("Weekly streak: in-progress week does not break past streak", func(t *testing.T) {
 		h, err := svc.Create(ctx, "Gym weekly", "", 3, "week")
 		require.NoError(t, err)
+		setHabitCreatedAt(t, pool, h.ID, time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC))
 
 		// Use fixed dates: ref = Wednesday 2025-03-19
 		ref := time.Date(2025, 3, 19, 0, 0, 0, 0, time.UTC)
@@ -261,6 +275,7 @@ func TestHabitService(t *testing.T) {
 	t.Run("Weekly streak includes current week when completed", func(t *testing.T) {
 		h, err := svc.Create(ctx, "Gym current week", "", 2, "week")
 		require.NoError(t, err)
+		setHabitCreatedAt(t, pool, h.ID, time.Date(2025, 3, 1, 0, 0, 0, 0, time.UTC))
 
 		ref := time.Date(2025, 3, 19, 0, 0, 0, 0, time.UTC)
 
@@ -286,6 +301,7 @@ func TestHabitService(t *testing.T) {
 	t.Run("Monthly streak: in-progress month does not break past streak", func(t *testing.T) {
 		h, err := svc.Create(ctx, "Monthly review", "", 2, "month")
 		require.NoError(t, err)
+		setHabitCreatedAt(t, pool, h.ID, time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
 
 		ref := time.Date(2025, 3, 15, 0, 0, 0, 0, time.UTC)
 
@@ -315,6 +331,7 @@ func TestHabitService(t *testing.T) {
 	t.Run("History: past date shows past entry", func(t *testing.T) {
 		h, err := svc.Create(ctx, "History habit", "", 1, "day")
 		require.NoError(t, err)
+		setHabitCreatedAt(t, pool, h.ID, yesterday.AddDate(0, 0, -1))
 
 		_, err = svc.Toggle(ctx, h.ID, yesterday)
 		require.NoError(t, err)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"habitual/internal/dateutil"
 	"habitual/internal/model"
 )
 
@@ -11,7 +12,7 @@ import (
 
 // firstOfMonth returns the first day of the month containing t.
 func firstOfMonth(t time.Time) time.Time {
-	return time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC)
+	return dateutil.FirstOfMonth(t)
 }
 
 // prevMonth returns the first day of the previous month.
@@ -26,8 +27,7 @@ func nextMonth(month time.Time) time.Time {
 
 // isCurrentMonth reports whether month is the same year+month as today.
 func isCurrentMonth(month time.Time) bool {
-	now := time.Now()
-	return month.Year() == now.Year() && month.Month() == now.Month()
+	return isSameMonth(month, dateutil.Today())
 }
 
 // isSameMonth reports whether d and month share the same year+month.
@@ -37,13 +37,12 @@ func isSameMonth(d, month time.Time) bool {
 
 // isSameDay reports whether a and b fall on the same calendar day.
 func isSameDay(a, b time.Time) bool {
-	return a.Year() == b.Year() && a.Month() == b.Month() && a.Day() == b.Day()
+	return dateutil.SameDay(a, b)
 }
 
 // isFutureDay reports whether d is strictly after today.
 func isFutureDay(d time.Time) bool {
-	today := time.Now().Truncate(24 * time.Hour)
-	return d.After(today)
+	return dateutil.StartOfDay(d).After(dateutil.Today())
 }
 
 // calendarDays returns all days to display in a calendar grid for the given month.
@@ -59,7 +58,7 @@ func calendarDays(month time.Time) []time.Time {
 	}
 	start := first.AddDate(0, 0, -(wd - 1))
 
-	last := time.Date(month.Year(), month.Month()+1, 0, 0, 0, 0, 0, time.UTC)
+	last := time.Date(month.Year(), month.Month()+1, 0, 0, 0, 0, 0, dateutil.Location())
 	wd = int(last.Weekday())
 	if wd == 0 {
 		wd = 7
@@ -73,10 +72,9 @@ func calendarDays(month time.Time) []time.Time {
 	return days
 }
 
-
 func formatDateLabel(t time.Time) string {
-	today := time.Now().Truncate(24 * time.Hour)
-	d := t.Truncate(24 * time.Hour)
+	today := dateutil.Today()
+	d := dateutil.StartOfDay(t)
 	switch {
 	case d.Equal(today):
 		return "Today"
@@ -88,8 +86,7 @@ func formatDateLabel(t time.Time) string {
 }
 
 func isToday(t time.Time) bool {
-	today := time.Now().Truncate(24 * time.Hour)
-	return t.Truncate(24 * time.Hour).Equal(today)
+	return dateutil.SameDay(t, dateutil.Today())
 }
 
 func dateParam(t time.Time) string {

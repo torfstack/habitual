@@ -1,17 +1,17 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"habitual/internal/dateutil"
 	"habitual/internal/model"
 	"habitual/internal/service"
 	"habitual/web/components"
 )
-
-const dateLayout = "2006-01-02"
 
 type Handler struct {
 	habits *service.HabitService
@@ -33,13 +33,13 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 // parseDateParam reads a date from the request (query param or form value).
 // Future dates are clamped to today.
 func parseDateParam(r *http.Request) time.Time {
-	today := time.Now().Truncate(24 * time.Hour)
+	today := dateutil.Today()
 
 	for _, raw := range []string{r.URL.Query().Get("date"), r.FormValue("date")} {
 		if raw == "" {
 			continue
 		}
-		if t, err := time.Parse(dateLayout, raw); err == nil {
+		if t, err := dateutil.ParseDay(raw); err == nil {
 			if !t.After(today) {
 				return t
 			}
@@ -87,16 +87,14 @@ func (h *Handler) day(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) calendar(w http.ResponseWriter, r *http.Request) {
 	monthStr := r.URL.Query().Get("month")
 	var month time.Time
-	if t, err := time.Parse("2006-01", monthStr); err == nil {
-		month = t
+	if t, err := time.ParseInLocation("2006-01", monthStr, dateutil.Location()); err == nil {
+		month = dateutil.FirstOfMonth(t)
 	} else {
-		now := time.Now().UTC()
-		month = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+		month = dateutil.FirstOfMonth(dateutil.Today())
 	}
 
 	// Clamp to current month — don't allow future months
-	now := time.Now().UTC()
-	currentMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	currentMonth := dateutil.FirstOfMonth(dateutil.Today())
 	if month.After(currentMonth) {
 		month = currentMonth
 	}
@@ -151,7 +149,14 @@ func (h *Handler) toggleHabit(w http.ResponseWriter, r *http.Request) {
 	date := parseDateParam(r)
 
 	if _, err := h.habits.Toggle(r.Context(), id, date); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		switch {
+		case errors.Is(err, service.ErrHabitNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		case errors.Is(err, service.ErrHabitInactiveOnDate):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -169,8 +174,7 @@ func (h *Handler) toggleHabit(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	today := time.Now()
-	isToday := date.Year() == today.Year() && date.Month() == today.Month() && date.Day() == today.Day()
+	isToday := dateutil.SameDay(date, dateutil.Today())
 	if isToday && len(habits) > 0 && allCompleted(habits) {
 		w.Header().Set("HX-Trigger", "confetti")
 	}

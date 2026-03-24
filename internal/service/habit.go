@@ -2,17 +2,23 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"habitual/internal/dateutil"
 	"habitual/internal/model"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type HabitService struct {
 	db *pgxpool.Pool
 }
+
+var ErrHabitNotFound = errors.New("habit not found")
+var ErrHabitInactiveOnDate = errors.New("habit is not active on the selected date")
 
 func NewHabitService(db *pgxpool.Pool) *HabitService {
 	return &HabitService{db: db}
@@ -235,6 +241,27 @@ func (s *HabitService) Delete(ctx context.Context, id int, date time.Time) error
 // Returns true if an entry was created, false if it was removed.
 func (s *HabitService) Toggle(ctx context.Context, habitID int, date time.Time) (hasEntry bool, err error) {
 	day := date.Format("2006-01-02")
+	date = dateutil.StartOfDay(date)
+
+	var createdAt time.Time
+	var deletedAt *time.Time
+	err = s.db.QueryRow(ctx,
+		`SELECT created_at, deleted_at FROM habits WHERE id = $1`,
+		habitID,
+	).Scan(&createdAt, &deletedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, ErrHabitNotFound
+		}
+		return false, fmt.Errorf("load habit: %w", err)
+	}
+
+	if date.Before(dateutil.StartOfDay(createdAt)) {
+		return false, ErrHabitInactiveOnDate
+	}
+	if deletedAt != nil && !date.Before(dateutil.StartOfDay(*deletedAt)) {
+		return false, ErrHabitInactiveOnDate
+	}
 
 	var exists bool
 	err = s.db.QueryRow(ctx,
@@ -253,4 +280,3 @@ func (s *HabitService) Toggle(ctx context.Context, habitID int, date time.Time) 
 	_, err = s.db.Exec(ctx, `INSERT INTO entries (habit_id, day) VALUES ($1, $2)`, habitID, day)
 	return true, err
 }
-
