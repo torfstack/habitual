@@ -1,6 +1,8 @@
 package components
 
-templ Layout(title string) {
+import "habitual/internal/model"
+
+templ Layout(title string, user *model.User) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -21,10 +23,26 @@ templ Layout(title string) {
 		<body>
 			<header>
 				<h1><a href="/">Habitual</a></h1>
-				<button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
-					<span class="icon-sun">☀️</span>
-					<span class="icon-moon">🌙</span>
-				</button>
+				<div class="header-actions">
+					if user != nil {
+						<div class="user-chip">
+							if user.PictureURL != "" {
+								<img src={ user.PictureURL } alt={ user.Name } class="user-avatar"/>
+							}
+							<div class="user-meta">
+								<span class="user-name">{ user.Name }</span>
+								<span class="user-email">{ user.Email }</span>
+							</div>
+							<form method="post" action="/logout">
+								<button type="submit" class="logout-btn">Log out</button>
+							</form>
+						</div>
+					}
+					<button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+						<span class="icon-sun">☀️</span>
+						<span class="icon-moon">🌙</span>
+					</button>
+				</div>
 			</header>
 			<main id="day-content">
 				{ children... }

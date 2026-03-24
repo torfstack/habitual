@@ -6,6 +6,7 @@ import (
 
 type Habit struct {
 	ID          int
+	UserID      int
 	Name        string
 	Description string
 	Target      int    // completions required per period
@@ -24,6 +25,16 @@ type Entry struct {
 	HabitID   int
 	Day       time.Time
 	CreatedAt time.Time
+}
+
+type User struct {
+	ID          int
+	GoogleSub   string
+	Email       string
+	Name        string
+	PictureURL  string
+	CreatedAt   time.Time
+	LastLoginAt time.Time
 }
 
 // DaySummary holds completion status for a single calendar day.

@@ -27,6 +27,21 @@ spec:
                 secretKeyRef:
                   name: habitual
                   key: DATABASE_URL
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: habitual
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: habitual
+                  key: GOOGLE_CLIENT_SECRET
+            - name: GOOGLE_REDIRECT_URL
+              valueFrom:
+                secretKeyRef:
+                  name: habitual
+                  key: GOOGLE_REDIRECT_URI
           readinessProbe:
             httpGet:
               path: /
