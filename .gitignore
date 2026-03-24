@@ -22,3 +22,8 @@ Thumbs.db
 
 # Kubernetes secrets (contain real credentials)
 deployment/templates/secret.yaml
+
+# google
+client_secret.json
+
+mise.local.toml
