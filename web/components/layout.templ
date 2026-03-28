@@ -22,9 +22,15 @@ templ Layout(title string, user *model.User) {
 		</head>
 		<body>
 			<header>
-				<h1><a href="/">Habitual</a></h1>
-				<div class="header-actions">
-					if user != nil {
+				<div class="header-top">
+					<h1><a href="/">Habitual</a></h1>
+					<button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+						<span class="icon-sun">☀️</span>
+						<span class="icon-moon">🌙</span>
+					</button>
+				</div>
+				if user != nil {
+					<div class="header-actions">
 						<div class="user-chip">
 							if user.PictureURL != "" {
 								<img src={ user.PictureURL } alt={ user.Name } class="user-avatar"/>
@@ -33,16 +39,12 @@ templ Layout(title string, user *model.User) {
 								<span class="user-name">{ user.Name }</span>
 								<span class="user-email">{ user.Email }</span>
 							</div>
-							<form method="post" action="/logout">
+							<form method="post" action="/logout" class="logout-form">
 								<button type="submit" class="logout-btn">Log out</button>
 							</form>
 						</div>
-					}
-					<button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
-						<span class="icon-sun">☀️</span>
-						<span class="icon-moon">🌙</span>
-					</button>
-				</div>
+					</div>
+				}
 			</header>
 			<main id="day-content">
 				{ children... }
