@@ -27,3 +27,4 @@ deployment/templates/secret.yaml
 client_secret.json
 
 mise.local.toml
+.worktrees/
