@@ -183,19 +183,21 @@ templ HabitRow(h model.Habit, date time.Time) {
 	<div
 		class={ "habit-row", templ.KV("completed", h.Completed), templ.KV("has-entry", h.HasEntry && !h.Completed) }
 		id={ fmt.Sprintf("habit-%d", h.ID) }
+		role="button"
+		tabindex="0"
+		aria-label={ fmt.Sprintf("Toggle habit %s", h.Name) }
+		hx-post={ fmt.Sprintf("/habits/%d/toggle?date=%s", h.ID, dateParam(date)) }
+		hx-target={ fmt.Sprintf("#habit-%d", h.ID) }
+		hx-swap="outerHTML"
+		hx-trigger="click, keyup[key=='Enter'], keyup[key==' ']"
 	>
-		<button
-			class="toggle-btn"
-			hx-post={ fmt.Sprintf("/habits/%d/toggle?date=%s", h.ID, dateParam(date)) }
-			hx-target={ fmt.Sprintf("#habit-%d", h.ID) }
-			hx-swap="outerHTML"
-		>
+		<span class="toggle-btn" aria-hidden="true">
 			if h.HasEntry {
 				✓
 			} else {
 				○
 			}
-		</button>
+		</span>
 		<div class="habit-info">
 			<span class="habit-name">{ h.Name }</span>
 			if h.Description != "" {
@@ -219,6 +221,7 @@ templ HabitRow(h model.Habit, date time.Time) {
 			hx-target={ fmt.Sprintf("#habit-%d", h.ID) }
 			hx-swap="outerHTML"
 			hx-confirm="Delete this habit?"
+			hx-on:click="event.stopPropagation()"
 		>✕</button>
 	</div>
 }
